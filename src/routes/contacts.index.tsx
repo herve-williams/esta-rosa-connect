@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 type Filter = "all" | "high" | "client";
 
-export const Route = createFileRoute("/contacts")({
+export const Route = createFileRoute("/contacts/")({
   validateSearch: (s: Record<string, unknown>) => ({
     sector: typeof s.sector === "string" ? s.sector : undefined,
   }),
