@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BroadcastRouteImport } from './routes/broadcast'
 import { Route as AssistantRouteImport } from './routes/assistant'
@@ -16,6 +17,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContactsIndexRouteImport } from './routes/contacts.index'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/assistant': typeof AssistantRoute
   '/broadcast': typeof BroadcastRoute
   '/dashboard': typeof DashboardRoute
+  '/settings': typeof SettingsRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/contacts/': typeof ContactsIndexRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/assistant': typeof AssistantRoute
   '/broadcast': typeof BroadcastRoute
   '/dashboard': typeof DashboardRoute
+  '/settings': typeof SettingsRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/contacts': typeof ContactsIndexRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/assistant': typeof AssistantRoute
   '/broadcast': typeof BroadcastRoute
   '/dashboard': typeof DashboardRoute
+  '/settings': typeof SettingsRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/contacts/': typeof ContactsIndexRoute
 }
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/broadcast'
     | '/dashboard'
+    | '/settings'
     | '/contacts/$id'
     | '/contacts/'
   fileRoutesByTo: FileRoutesByTo
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/broadcast'
     | '/dashboard'
+    | '/settings'
     | '/contacts/$id'
     | '/contacts'
   id:
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/broadcast'
     | '/dashboard'
+    | '/settings'
     | '/contacts/$id'
     | '/contacts/'
   fileRoutesById: FileRoutesById
@@ -104,12 +116,20 @@ export interface RootRouteChildren {
   AssistantRoute: typeof AssistantRoute
   BroadcastRoute: typeof BroadcastRoute
   DashboardRoute: typeof DashboardRoute
+  SettingsRoute: typeof SettingsRoute
   ContactsIdRoute: typeof ContactsIdRoute
   ContactsIndexRoute: typeof ContactsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -160,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssistantRoute: AssistantRoute,
   BroadcastRoute: BroadcastRoute,
   DashboardRoute: DashboardRoute,
+  SettingsRoute: SettingsRoute,
   ContactsIdRoute: ContactsIdRoute,
   ContactsIndexRoute: ContactsIndexRoute,
 }
