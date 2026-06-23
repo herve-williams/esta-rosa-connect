@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/assistant")({
   head: () => ({ meta: [{ title: "Assistant IA — EstaRosa" }] }),
-  component: Assistant;
+  component: Assistant,
 });
 
 const SUGGESTIONS = [
