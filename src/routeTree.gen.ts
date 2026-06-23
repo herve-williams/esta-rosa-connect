@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as BroadcastRouteImport } from './routes/broadcast'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContactsIndexRouteImport } from './routes/contacts.index'
 import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
@@ -17,6 +18,11 @@ import { Route as ContactsIdRouteImport } from './routes/contacts.$id'
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BroadcastRoute = BroadcastRouteImport.update({
+  id: '/broadcast',
+  path: '/broadcast',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,12 +43,14 @@ const ContactsIdRoute = ContactsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/broadcast': typeof BroadcastRoute
   '/dashboard': typeof DashboardRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/contacts/': typeof ContactsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/broadcast': typeof BroadcastRoute
   '/dashboard': typeof DashboardRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/contacts': typeof ContactsIndexRoute
@@ -50,20 +58,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/broadcast': typeof BroadcastRoute
   '/dashboard': typeof DashboardRoute
   '/contacts/$id': typeof ContactsIdRoute
   '/contacts/': typeof ContactsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/contacts/$id' | '/contacts/'
+  fullPaths: '/' | '/broadcast' | '/dashboard' | '/contacts/$id' | '/contacts/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/contacts/$id' | '/contacts'
-  id: '__root__' | '/' | '/dashboard' | '/contacts/$id' | '/contacts/'
+  to: '/' | '/broadcast' | '/dashboard' | '/contacts/$id' | '/contacts'
+  id:
+    | '__root__'
+    | '/'
+    | '/broadcast'
+    | '/dashboard'
+    | '/contacts/$id'
+    | '/contacts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BroadcastRoute: typeof BroadcastRoute
   DashboardRoute: typeof DashboardRoute
   ContactsIdRoute: typeof ContactsIdRoute
   ContactsIndexRoute: typeof ContactsIndexRoute
@@ -76,6 +92,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/broadcast': {
+      id: '/broadcast'
+      path: '/broadcast'
+      fullPath: '/broadcast'
+      preLoaderRoute: typeof BroadcastRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,6 +127,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BroadcastRoute: BroadcastRoute,
   DashboardRoute: DashboardRoute,
   ContactsIdRoute: ContactsIdRoute,
   ContactsIndexRoute: ContactsIndexRoute,
