@@ -28,6 +28,8 @@ interface State {
 
   contacts: Contact[];
   updateContact: (id: number, patch: Partial<Contact>) => void;
+  addContact: (c: Omit<Contact, "id">) => Contact;
+  addContacts: (cs: Omit<Contact, "id">[]) => Contact[];
 
   selectedIds: number[];
   setSelectedIds: (ids: number[]) => void;
@@ -126,7 +128,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     contacts,
     updateContact: (id, patch) =>
       setContacts((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c))),
-    selectedIds,
+    addContact: (c) => {
+      const nc: Contact = { ...c, id: Date.now() };
+      setContacts((cs) => [nc, ...cs]);
+      return nc;
+    },
+    addContacts: (list) => {
+      const base = Date.now();
+      const created: Contact[] = list.map((c, i) => ({ ...c, id: base + i }));
+      setContacts((cs) => [...created, ...cs]);
+      return created;
+    },
     setSelectedIds,
     toggleSelected: (id) =>
       setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])),
