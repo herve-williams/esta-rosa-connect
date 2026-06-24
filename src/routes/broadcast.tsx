@@ -11,7 +11,7 @@ export const Route = createFileRoute("/broadcast")({
 });
 
 function Broadcast() {
-  const { contacts, selectedIds, clearSelected, templates, addTemplate, updateTemplate, deleteTemplate } = useApp();
+  const { contacts, selectedIds, clearSelected, templates, sectors, addTemplate, updateTemplate, deleteTemplate } = useApp();
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState<Template | null>(null);
   const [newName, setNewName] = useState("");
@@ -56,14 +56,22 @@ function Broadcast() {
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {recipients.map((r) => (
-                <span key={r.id} className="inline-flex items-center gap-2 bg-surface-2 px-2.5 py-1 rounded-full text-xs">
-                  <span className="h-5 w-5 rounded-full gradient-brand flex items-center justify-center text-[9px] text-primary-foreground font-bold">
-                    {initials(r.name)}
+              {recipients.map((r) => {
+                const sec = sectors.find((s) => s.id === r.sector);
+                return (
+                  <span key={r.id} className="inline-flex items-center gap-2 bg-surface-2 px-2.5 py-1 rounded-full text-xs">
+                    <span className="h-5 w-5 rounded-full gradient-brand flex items-center justify-center text-[9px] text-primary-foreground font-bold">
+                      {initials(r.name)}
+                    </span>
+                    <span>{r.name}</span>
+                    {sec && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-teal/15 text-teal text-[10px] border border-teal/30">
+                        <span>{sec.icon}</span>{sec.name}
+                      </span>
+                    )}
                   </span>
-                  {r.name}
-                </span>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
