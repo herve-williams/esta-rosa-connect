@@ -54,7 +54,7 @@ const DEFAULT_TEMPLATES: Template[] = [
   {
     id: "t1",
     name: "Présentation",
-    text: "Bonjour {nom}, je suis Esther de EstaRosa. Nous accompagnons les salons de beauté de Douala dans leur visibilité digitale (site, réseaux sociaux, Google Maps). Puis-je vous présenter brièvement nos services ?",
+    text: "Bonjour {nom}, je suis Hervé de EstaRosa. Nous accompagnons les salons de beauté de Douala dans leur visibilité digitale (site, réseaux sociaux, Google Maps). Puis-je vous présenter brièvement nos services ?",
   },
   {
     id: "t2",

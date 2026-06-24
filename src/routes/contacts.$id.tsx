@@ -30,7 +30,7 @@ function ContactDetail() {
   }
 
   const c = contact;
-  const presentationMsg = `Bonjour, je suis Esther d'EstaRosa. Concernant ${c.name}…`;
+  const presentationMsg = `Bonjour, je suis Hervé d'EstaRosa. Concernant ${c.name}…`;
 
   return (
     <div className="flex-1 overflow-y-auto">
