@@ -3,8 +3,44 @@ import { useEffect, useRef, useState } from "react";
 import { Send, Plus, Trash2, Paperclip, Sparkles } from "lucide-react";
 import { useApp, type Conversation } from "@/lib/store";
 import { BrandMark } from "@/components/brand-mark";
-import { STATUS_LABELS, type Contact } from "@/data/contacts";
+import { STATUS_LABELS, type Contact, type Priority } from "@/data/contacts";
 import { cn } from "@/lib/utils";
+
+type NewContact = Omit<Contact, "id">;
+
+function parseBulkContacts(text: string, sectors: { id: string; name: string }[]): NewContact[] | null {
+  const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+  if (blocks.length === 0) return null;
+  const results: NewContact[] = [];
+  for (const block of blocks) {
+    const fields: Record<string, string> = {};
+    for (const line of block.split(/\n/)) {
+      const m = line.match(/^\s*(Nom|Téléphone|Telephone|Zone|Secteur|Priorité|Priorite|Facebook|Instagram|Site|Email)\s*:\s*(.*)$/i);
+      if (m) fields[m[1].toLowerCase().replace("é", "e")] = m[2].trim();
+    }
+    const name = fields["nom"];
+    const phone = fields["telephone"] || fields["téléphone"];
+    if (!name || !phone) return null;
+    const secRaw = (fields["secteur"] || "").toLowerCase();
+    const sec = sectors.find((s) => s.id.toLowerCase() === secRaw || s.name.toLowerCase() === secRaw);
+    const prioRaw = (fields["priorite"] || "").toLowerCase();
+    const priority: Priority = prioRaw.startsWith("haut") ? "high" : prioRaw.startsWith("bas") ? "low" : "medium";
+    results.push({
+      name, phone,
+      zone: fields["zone"] || "",
+      rating: 0, reviews: 0,
+      priority,
+      sector: sec?.id || sectors[0]?.id || "",
+      facebook: fields["facebook"] || "",
+      instagram: fields["instagram"] || "",
+      email: fields["email"] || "",
+      site: fields["site"] || "",
+      status: "new",
+      notes: "", lastAction: "", subStart: "", subEnd: "",
+    });
+  }
+  return results.length ? results : null;
+}
 
 export const Route = createFileRoute("/assistant")({
   head: () => ({ meta: [{ title: "Assistant IA — EstaRosa" }] }),
