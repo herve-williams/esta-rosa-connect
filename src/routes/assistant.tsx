@@ -123,10 +123,11 @@ Posez une question, ou utilisez un raccourci ci-dessus.`;
 }
 
 function Assistant() {
-  const { contacts, conversations, addConversation, updateConversation, deleteConversation } = useApp();
+  const { contacts, conversations, sectors, addContacts, addConversation, updateConversation, deleteConversation } = useApp();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [attached, setAttached] = useState<string | null>(null);
+  const [thinking, setThinking] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -134,7 +135,7 @@ function Assistant() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [active?.messages.length]);
+  }, [active?.messages.length, thinking]);
 
   function startNew() {
     const conv: Conversation = {
@@ -148,9 +149,11 @@ function Assistant() {
   }
 
   function send(text?: string) {
+    if (thinking) return;
     const content = (text ?? input).trim();
     if (!content && !attached) return;
     let convId = activeId;
+    let baseMessages: Conversation["messages"] = [];
     if (!convId) {
       const conv: Conversation = {
         id: `c_${Date.now()}`,
@@ -161,20 +164,50 @@ function Assistant() {
       addConversation(conv);
       convId = conv.id;
       setActiveId(conv.id);
+    } else {
+      baseMessages = conversations.find((c) => c.id === convId)?.messages ?? [];
     }
-    const target = conversations.find((c) => c.id === convId) ?? { id: convId, title: content.slice(0, 40) || "Image", date: new Date().toISOString(), messages: [] };
     const userMsg = { role: "user" as const, content, image: attached ?? undefined };
-    const ai = attached
-      ? "Image bien reçue. 🌸 Comme je n'utilise pas de vision externe, dites-moi ce que vous souhaitez en faire (analyse, légende, idée de message…) et je vous aide."
-      : answer(content, contacts);
-    const aiMsg = { role: "assistant" as const, content: ai };
+    const withUser = [...baseMessages, userMsg];
+    const isFirst = baseMessages.length === 0;
     updateConversation(convId, {
-      messages: [...target.messages, userMsg, aiMsg],
-      title: target.messages.length === 0 ? (content.slice(0, 40) || "Image") : target.title,
+      messages: withUser,
+      title: isFirst ? (content.slice(0, 40) || "Image") : undefined as never,
     });
     setInput("");
+    const hadAttachment = !!attached;
     setAttached(null);
+    setThinking(true);
+
+    const delay = 900 + Math.floor(Math.random() * 900);
+    const targetId = convId;
+    setTimeout(() => {
+      let ai: string;
+      if (hadAttachment) {
+        ai = "Image bien reçue. 🌸 Comme je n'utilise pas de vision externe, dites-moi ce que vous souhaitez en faire (analyse, légende, idée de message…) et je vous aide.";
+      } else {
+        const bulk = parseBulkContacts(content, sectors);
+        if (bulk && bulk.length > 0) {
+          const created = addContacts(bulk);
+          const bySector: Record<string, number> = {};
+          created.forEach((c) => { bySector[c.sector] = (bySector[c.sector] || 0) + 1; });
+          const detail = Object.entries(bySector)
+            .map(([sid, n]) => {
+              const sec = sectors.find((s) => s.id === sid);
+              return `${n} dans **${sec?.name ?? sid}**`;
+            })
+            .join(", ");
+          ai = `✅ ${created.length} contact${created.length > 1 ? "s" : ""} ajouté${created.length > 1 ? "s" : ""} avec succès — ${detail}.`;
+        } else {
+          ai = answer(content, contacts);
+        }
+      }
+      const aiMsg = { role: "assistant" as const, content: ai };
+      updateConversation(targetId, { messages: [...withUser, aiMsg] });
+      setThinking(false);
+    }, delay);
   }
+
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
