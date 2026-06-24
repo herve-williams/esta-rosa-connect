@@ -294,6 +294,18 @@ function Assistant() {
                 </div>
               ))
             )}
+            {thinking && (
+              <div className="flex gap-3 justify-start">
+                <div className="h-8 w-8 rounded-full bg-violet/15 border border-violet/30 flex items-center justify-center shrink-0">
+                  <BrandMark size={20} animate />
+                </div>
+                <div className="rounded-2xl px-4 py-3 bg-card border border-border flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-violet animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="h-2 w-2 rounded-full bg-violet animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="h-2 w-2 rounded-full bg-violet animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
