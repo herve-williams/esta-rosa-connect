@@ -28,6 +28,8 @@ interface State {
 
   contacts: Contact[];
   updateContact: (id: number, patch: Partial<Contact>) => void;
+  addContact: (c: Omit<Contact, "id">) => Contact;
+  addContacts: (cs: Omit<Contact, "id">[]) => Contact[];
 
   selectedIds: number[];
   setSelectedIds: (ids: number[]) => void;
@@ -54,7 +56,7 @@ const DEFAULT_TEMPLATES: Template[] = [
   {
     id: "t1",
     name: "Présentation",
-    text: "Bonjour {nom}, je suis Esther de EstaRosa. Nous accompagnons les salons de beauté de Douala dans leur visibilité digitale (site, réseaux sociaux, Google Maps). Puis-je vous présenter brièvement nos services ?",
+    text: "Bonjour {nom}, je suis Hervé de EstaRosa. Nous accompagnons les salons de beauté de Douala dans leur visibilité digitale (site, réseaux sociaux, Google Maps). Puis-je vous présenter brièvement nos services ?",
   },
   {
     id: "t2",
@@ -126,6 +128,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     contacts,
     updateContact: (id, patch) =>
       setContacts((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c))),
+    addContact: (c) => {
+      const nc: Contact = { ...c, id: Date.now() };
+      setContacts((cs) => [nc, ...cs]);
+      return nc;
+    },
+    addContacts: (list) => {
+      const base = Date.now();
+      const created: Contact[] = list.map((c, i) => ({ ...c, id: base + i }));
+      setContacts((cs) => [...created, ...cs]);
+      return created;
+    },
     selectedIds,
     setSelectedIds,
     toggleSelected: (id) =>

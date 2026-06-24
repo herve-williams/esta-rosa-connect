@@ -3,8 +3,44 @@ import { useEffect, useRef, useState } from "react";
 import { Send, Plus, Trash2, Paperclip, Sparkles } from "lucide-react";
 import { useApp, type Conversation } from "@/lib/store";
 import { BrandMark } from "@/components/brand-mark";
-import { STATUS_LABELS, type Contact } from "@/data/contacts";
+import { STATUS_LABELS, type Contact, type Priority } from "@/data/contacts";
 import { cn } from "@/lib/utils";
+
+type NewContact = Omit<Contact, "id">;
+
+function parseBulkContacts(text: string, sectors: { id: string; name: string }[]): NewContact[] | null {
+  const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+  if (blocks.length === 0) return null;
+  const results: NewContact[] = [];
+  for (const block of blocks) {
+    const fields: Record<string, string> = {};
+    for (const line of block.split(/\n/)) {
+      const m = line.match(/^\s*(Nom|Téléphone|Telephone|Zone|Secteur|Priorité|Priorite|Facebook|Instagram|Site|Email)\s*:\s*(.*)$/i);
+      if (m) fields[m[1].toLowerCase().replace("é", "e")] = m[2].trim();
+    }
+    const name = fields["nom"];
+    const phone = fields["telephone"] || fields["téléphone"];
+    if (!name || !phone) return null;
+    const secRaw = (fields["secteur"] || "").toLowerCase();
+    const sec = sectors.find((s) => s.id.toLowerCase() === secRaw || s.name.toLowerCase() === secRaw);
+    const prioRaw = (fields["priorite"] || "").toLowerCase();
+    const priority: Priority = prioRaw.startsWith("haut") ? "high" : prioRaw.startsWith("bas") ? "low" : "medium";
+    results.push({
+      name, phone,
+      zone: fields["zone"] || "",
+      rating: 0, reviews: 0,
+      priority,
+      sector: sec?.id || sectors[0]?.id || "",
+      facebook: fields["facebook"] || "",
+      instagram: fields["instagram"] || "",
+      email: fields["email"] || "",
+      site: fields["site"] || "",
+      status: "new",
+      notes: "", lastAction: "", subStart: "", subEnd: "",
+    });
+  }
+  return results.length ? results : null;
+}
 
 export const Route = createFileRoute("/assistant")({
   head: () => ({ meta: [{ title: "Assistant IA — EstaRosa" }] }),
@@ -87,10 +123,11 @@ Posez une question, ou utilisez un raccourci ci-dessus.`;
 }
 
 function Assistant() {
-  const { contacts, conversations, addConversation, updateConversation, deleteConversation } = useApp();
+  const { contacts, conversations, sectors, addContacts, addConversation, updateConversation, deleteConversation } = useApp();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [attached, setAttached] = useState<string | null>(null);
+  const [thinking, setThinking] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -98,7 +135,7 @@ function Assistant() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [active?.messages.length]);
+  }, [active?.messages.length, thinking]);
 
   function startNew() {
     const conv: Conversation = {
@@ -112,9 +149,11 @@ function Assistant() {
   }
 
   function send(text?: string) {
+    if (thinking) return;
     const content = (text ?? input).trim();
     if (!content && !attached) return;
     let convId = activeId;
+    let baseMessages: Conversation["messages"] = [];
     if (!convId) {
       const conv: Conversation = {
         id: `c_${Date.now()}`,
@@ -125,20 +164,49 @@ function Assistant() {
       addConversation(conv);
       convId = conv.id;
       setActiveId(conv.id);
+    } else {
+      baseMessages = conversations.find((c) => c.id === convId)?.messages ?? [];
     }
-    const target = conversations.find((c) => c.id === convId) ?? { id: convId, title: content.slice(0, 40) || "Image", date: new Date().toISOString(), messages: [] };
     const userMsg = { role: "user" as const, content, image: attached ?? undefined };
-    const ai = attached
-      ? "Image bien reçue. 🌸 Comme je n'utilise pas de vision externe, dites-moi ce que vous souhaitez en faire (analyse, légende, idée de message…) et je vous aide."
-      : answer(content, contacts);
-    const aiMsg = { role: "assistant" as const, content: ai };
-    updateConversation(convId, {
-      messages: [...target.messages, userMsg, aiMsg],
-      title: target.messages.length === 0 ? (content.slice(0, 40) || "Image") : target.title,
-    });
+    const withUser = [...baseMessages, userMsg];
+    const isFirst = baseMessages.length === 0;
+    updateConversation(convId, isFirst
+      ? { messages: withUser, title: content.slice(0, 40) || "Image" }
+      : { messages: withUser });
     setInput("");
+    const hadAttachment = !!attached;
     setAttached(null);
+    setThinking(true);
+
+    const delay = 900 + Math.floor(Math.random() * 900);
+    const targetId = convId;
+    setTimeout(() => {
+      let ai: string;
+      if (hadAttachment) {
+        ai = "Image bien reçue. 🌸 Comme je n'utilise pas de vision externe, dites-moi ce que vous souhaitez en faire (analyse, légende, idée de message…) et je vous aide.";
+      } else {
+        const bulk = parseBulkContacts(content, sectors);
+        if (bulk && bulk.length > 0) {
+          const created = addContacts(bulk);
+          const bySector: Record<string, number> = {};
+          created.forEach((c) => { bySector[c.sector] = (bySector[c.sector] || 0) + 1; });
+          const detail = Object.entries(bySector)
+            .map(([sid, n]) => {
+              const sec = sectors.find((s) => s.id === sid);
+              return `${n} dans **${sec?.name ?? sid}**`;
+            })
+            .join(", ");
+          ai = `✅ ${created.length} contact${created.length > 1 ? "s" : ""} ajouté${created.length > 1 ? "s" : ""} avec succès — ${detail}.`;
+        } else {
+          ai = answer(content, contacts);
+        }
+      }
+      const aiMsg = { role: "assistant" as const, content: ai };
+      updateConversation(targetId, { messages: [...withUser, aiMsg] });
+      setThinking(false);
+    }, delay);
   }
+
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -226,6 +294,18 @@ function Assistant() {
                 </div>
               ))
             )}
+            {thinking && (
+              <div className="flex gap-3 justify-start">
+                <div className="h-8 w-8 rounded-full bg-violet/15 border border-violet/30 flex items-center justify-center shrink-0">
+                  <BrandMark size={20} animate />
+                </div>
+                <div className="rounded-2xl px-4 py-3 bg-card border border-border flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-violet animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="h-2 w-2 rounded-full bg-violet animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="h-2 w-2 rounded-full bg-violet animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -263,14 +343,15 @@ function Assistant() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                placeholder="Posez votre question…"
+                placeholder={thinking ? "L'assistant réfléchit…" : "Posez votre question…"}
                 rows={1}
-                className="flex-1 bg-transparent resize-none text-sm focus:outline-none py-2.5 max-h-32"
+                disabled={thinking}
+                className="flex-1 bg-transparent resize-none text-sm focus:outline-none py-2.5 max-h-32 disabled:opacity-60"
               />
               <button
                 onClick={() => send()}
                 className="p-2.5 rounded-xl gradient-brand text-primary-foreground disabled:opacity-40"
-                disabled={!input.trim() && !attached}
+                disabled={thinking || (!input.trim() && !attached)}
               >
                 <Send className="h-4 w-4" />
               </button>

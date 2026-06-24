@@ -50,7 +50,7 @@ function Dashboard() {
         <header className="space-y-2">
           <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}</p>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Bonjour <span className="text-gradient-brand">Esther</span>
+            Bonjour <span className="text-gradient-brand">Hervé</span>
           </h1>
           <p className="text-muted-foreground">Voici votre vue d'ensemble du jour.</p>
         </header>
