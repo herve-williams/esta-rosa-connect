@@ -170,10 +170,9 @@ function Assistant() {
     const userMsg = { role: "user" as const, content, image: attached ?? undefined };
     const withUser = [...baseMessages, userMsg];
     const isFirst = baseMessages.length === 0;
-    updateConversation(convId, {
-      messages: withUser,
-      title: isFirst ? (content.slice(0, 40) || "Image") : undefined as never,
-    });
+    updateConversation(convId, isFirst
+      ? { messages: withUser, title: content.slice(0, 40) || "Image" }
+      : { messages: withUser });
     setInput("");
     const hadAttachment = !!attached;
     setAttached(null);
