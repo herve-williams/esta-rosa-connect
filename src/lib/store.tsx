@@ -139,6 +139,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setContacts((cs) => [...created, ...cs]);
       return created;
     },
+    selectedIds,
     setSelectedIds,
     toggleSelected: (id) =>
       setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])),
