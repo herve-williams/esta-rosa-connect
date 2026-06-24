@@ -343,14 +343,15 @@ function Assistant() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                placeholder="Posez votre question…"
+                placeholder={thinking ? "L'assistant réfléchit…" : "Posez votre question…"}
                 rows={1}
-                className="flex-1 bg-transparent resize-none text-sm focus:outline-none py-2.5 max-h-32"
+                disabled={thinking}
+                className="flex-1 bg-transparent resize-none text-sm focus:outline-none py-2.5 max-h-32 disabled:opacity-60"
               />
               <button
                 onClick={() => send()}
                 className="p-2.5 rounded-xl gradient-brand text-primary-foreground disabled:opacity-40"
-                disabled={!input.trim() && !attached}
+                disabled={thinking || (!input.trim() && !attached)}
               >
                 <Send className="h-4 w-4" />
               </button>
